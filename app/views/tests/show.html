@@ -1,0 +1,22 @@
+<div>
+    <form style="display: none">
+        <input type="text" name="q" />
+    </form>
+    <div id="content"></div>
+</div>
+
+<script>
+    let content = document.getElementById('content');
+    let form = document.querySelector('form');
+
+    form.addEventListener('submit', (evt) => {
+        let input = document.querySelector('input')
+        content.innerText = input.value;
+        evt.stopPropagation();
+        evt.preventDefault();
+    })
+
+    setTimeout(() => {
+        form.style.display = 'block'
+    }, 2000)
+</script>
