@@ -1,24 +1,13 @@
-# README
+# Use Capybara only for launch server.
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+```rb
+  it 'can browse' do
+    page.goto("#{base_url}/test")
+    page.wait_for_selector('input', visible: true)
+    page.type_text('input', 'hoge')
+    page.keyboard.press('Enter')
+    expect(page.eval_on_selector('#content', 'el => el.textContent')).to include('hoge')
+  end
+```
 
-Things you may want to cover:
-
-* Ruby version
-
-* System dependencies
-
-* Configuration
-
-* Database creation
-
-* Database initialization
-
-* How to run the test suite
-
-* Services (job queues, cache servers, search engines, etc.)
-
-* Deployment instructions
-
-* ...
+![demo](demo.gif)
