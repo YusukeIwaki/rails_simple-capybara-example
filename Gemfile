@@ -49,6 +49,8 @@ group :test do
   gem 'capybara'
   gem 'rspec-rails'
   gem 'puppeteer-ruby', '>= 0.35.1'
+  gem 'capybara-puppeteer-driver'
+  gem 'factory_bot_rails'
 end
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
