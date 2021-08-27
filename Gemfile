@@ -48,8 +48,7 @@ end
 group :test do
   gem 'capybara'
   gem 'rspec-rails'
-  gem 'puppeteer-ruby', '>= 0.35.1'
-  gem 'capybara-puppeteer-driver'
+  gem 'playwright-ruby-client'
   gem 'factory_bot_rails'
 end
 
