@@ -46,7 +46,6 @@ group :development do
 end
 
 group :test do
-  gem 'capybara'
   gem 'rspec-rails'
   gem 'playwright-ruby-client'
   gem 'factory_bot_rails'

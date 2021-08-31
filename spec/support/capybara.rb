@@ -1,20 +1,44 @@
 RSpec.configure do |config|
-  require 'capybara'
   require 'playwright'
 
-  class CapybaraNullDriver < Capybara::Driver::Base
-    def needs_server?
-      true
+  config.before(:suite) do
+    # Railsアプリケーションの起動
+    require 'rack/builder'
+    testapp = Rack::Builder.app(Rails.application) do
+      map '/__ping' do
+        run ->(env) { [200, { 'Content-Type' => 'text/plain' }, ['OK']] }
+      end
     end
+
+    require 'rack/handler/puma'
+    server_thread = Thread.new do
+      Rack::Handler::Puma.run(testapp,
+        Port: 3000,
+        Threads: '0:4',
+        workers: 0,
+        daemon: false,
+      )
+    end
+
+    require 'net/http'
+    require 'timeout'
+    Timeout.timeout(3) do
+      loop do
+        puts "try"
+        puts Net::HTTP.get(URI("http://127.0.0.1:3000/__ping"))
+        break
+      rescue Errno::EADDRNOTAVAIL
+        sleep 1
+      rescue Errno::ECONNREFUSED
+        sleep 0.1
+      end
+    end
+    puts "done"
   end
 
-  Capybara.register_driver(:null) { CapybaraNullDriver.new }
-
-  config.around(driver: :null) do |example|
-    Capybara.current_driver = :null
-
+  config.around(type: :feature) do |example|
     # Rails server is launched here, at the first time of accessing Capybara.current_session.server
-    base_url = Capybara.current_session.server.base_url
+    base_url = 'http://127.0.0.1:3000'
 
     Playwright.create(playwright_cli_executable_path: './node_modules/.bin/playwright') do |playwright|
       # pass any option for Playwright#launch and Browser#new_page as you prefer.
