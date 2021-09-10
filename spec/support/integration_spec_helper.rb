@@ -8,14 +8,20 @@ RSpec.configure do |config|
       end
     end
 
-    require 'rack/handler/puma'
+    require 'rack/server'
     server_thread = Thread.new do
-      Rack::Handler::Puma.run(testapp,
-        Host: '127.0.0.1',
+      Rack::Server.start(
+        # options for Rack::Server
+        # https://github.com/rack/rack/blob/2.2.3/lib/rack/server.rb#L173
+        app: testapp,
+        server: :puma,
         Port: 3000,
+        daemonize: false,
+
+        # options for Rack::Handler::Puma
+        # https://github.com/puma/puma/blob/v5.4.0/lib/rack/handler/puma.rb#L84
         Threads: '0:4',
         workers: 0,
-        daemonize: false,
       )
     end
 
