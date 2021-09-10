@@ -1,44 +1,67 @@
-RSpec.configure do |config|
-  config.before(:suite) do
-    # Launch Rails application
+class RackTestServer
+  def initialize(app:, **options)
+    @options = options
+
+    @options[:Host] ||= 'localhost'
+    @options[:Port] ||= 3000
+
     require 'rack/builder'
-    testapp = Rack::Builder.app(Rails.application) do
+    @options[:app] = Rack::Builder.app(app) do
       map '/__ping' do
         run ->(env) { [200, { 'Content-Type' => 'text/plain' }, ['OK']] }
       end
     end
+  end
 
+  def base_url
+    "http://#{@options[:Host]}:#{@options[:Port]}"
+  end
+
+  def start
     require 'rack/server'
-    server_thread = Thread.new do
-      Rack::Server.start(
-        # options for Rack::Server
-        # https://github.com/rack/rack/blob/2.2.3/lib/rack/server.rb#L173
-        app: testapp,
-        server: :puma,
-        Port: 3000,
-        daemonize: false,
+    Rack::Server.start(**@options)
+  end
 
-        # options for Rack::Handler::Puma
-        # https://github.com/puma/puma/blob/v5.4.0/lib/rack/handler/puma.rb#L84
-        Threads: '0:4',
-        workers: 0,
-      )
-    end
-
+  def ready?
     require 'net/http'
+    begin
+      Net::HTTP.get(URI("#{base_url}/__ping"))
+      true
+    rescue Errno::EADDRNOTAVAIL
+      false
+    rescue Errno::ECONNREFUSED
+      false
+    end
+  end
+
+  def wait_for_ready(timeout: 3)
     require 'timeout'
     Timeout.timeout(3) do
-      loop do
-        puts "try"
-        puts Net::HTTP.get(URI("http://127.0.0.1:3000/__ping"))
-        break
-      rescue Errno::EADDRNOTAVAIL
-        sleep 1
-      rescue Errno::ECONNREFUSED
-        sleep 0.1
-      end
+      sleep 0.1 until ready?
     end
-    puts "done"
+  end
+end
+
+RSpec.configure do |config|
+  config.before(:suite) do
+    # Launch Rails application
+    test_server = RackTestServer.new(
+      # options for Rack::Server
+      # https://github.com/rack/rack/blob/2.2.3/lib/rack/server.rb#L173
+      app: Rails.application,
+      server: :puma,
+      Host: '127.0.0.1',
+      Port: 3000,
+      daemonize: false,
+
+      # options for Rack::Handler::Puma
+      # https://github.com/puma/puma/blob/v5.4.0/lib/rack/handler/puma.rb#L84
+      Threads: '0:4',
+      workers: 0,
+    )
+
+    Thread.new { test_server.start }
+    test_server.wait_for_ready
   end
 
   config.around(type: :feature) do |example|
