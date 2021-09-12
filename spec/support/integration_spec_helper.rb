@@ -1,51 +1,9 @@
-class RackTestServer
-  def initialize(app:, **options)
-    @options = options
-
-    @options[:Host] ||= 'localhost'
-    @options[:Port] ||= 3000
-
-    require 'rack/builder'
-    @options[:app] = Rack::Builder.app(app) do
-      map '/__ping' do
-        run ->(env) { [200, { 'Content-Type' => 'text/plain' }, ['OK']] }
-      end
-    end
-  end
-
-  def base_url
-    "http://#{@options[:Host]}:#{@options[:Port]}"
-  end
-
-  def start
-    require 'rack/server'
-    Rack::Server.start(**@options)
-  end
-
-  def ready?
-    require 'net/http'
-    begin
-      Net::HTTP.get(URI("#{base_url}/__ping"))
-      true
-    rescue Errno::EADDRNOTAVAIL
-      false
-    rescue Errno::ECONNREFUSED
-      false
-    end
-  end
-
-  def wait_for_ready(timeout: 3)
-    require 'timeout'
-    Timeout.timeout(3) do
-      sleep 0.1 until ready?
-    end
-  end
-end
+require 'rack/test_server'
 
 RSpec.configure do |config|
   config.before(:suite) do
     # Launch Rails application
-    test_server = RackTestServer.new(
+    test_server = Rack::TestServer.new(
       # options for Rack::Server
       # https://github.com/rack/rack/blob/2.2.3/lib/rack/server.rb#L173
       app: Rails.application,
@@ -60,7 +18,7 @@ RSpec.configure do |config|
       workers: 0,
     )
 
-    Thread.new { test_server.start }
+    test_server.start_async
     test_server.wait_for_ready
   end
 
