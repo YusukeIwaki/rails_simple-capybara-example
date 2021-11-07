@@ -46,6 +46,8 @@ group :development do
 end
 
 group :test do
+  gem 'rack-test_server'
+  gem 'webrick'
   gem 'rspec-rails'
   gem 'playwright-ruby-client'
   gem 'factory_bot_rails'

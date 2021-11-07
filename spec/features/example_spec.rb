@@ -4,7 +4,7 @@ describe 'example', driver: :null do
   let!(:user) { FactoryBot.create(:user) }
   let(:page) { @playwright_page }
 
-100.times do
+10.times do
   it 'can browse' do
     page.goto("/tests/#{user.id}")
     page.wait_for_selector('input').type('hoge')
